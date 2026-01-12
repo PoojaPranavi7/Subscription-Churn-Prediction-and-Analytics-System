@@ -1,0 +1,9 @@
+pandas
+numpy
+scikit-learn
+matplotlib
+seaborn
+sqlalchemy
+psycopg2-binary
+joblib
+jupyter
