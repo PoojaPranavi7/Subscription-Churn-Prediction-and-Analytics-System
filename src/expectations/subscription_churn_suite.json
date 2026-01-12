@@ -1,0 +1,78 @@
+{
+  "expectation_suite_name": "subscription_churn_suite",
+  "great_expectations_version": "0.18.19",
+  "expectations": [
+    {
+      "expectation_type": "expect_table_columns_to_match_ordered_list",
+      "kwargs": {
+        "column_list": [
+          "customerID",
+          "churn",
+          "tenure",
+          "MonthlyCharges",
+          "TotalCharges",
+          "charges_per_tenure",
+          "Contract",
+          "PaymentMethod",
+          "InternetService",
+          "PaperlessBilling",
+          "SeniorCitizen"
+        ]
+      },
+      "meta": { "notes": "Schema check for feature table." }
+    },
+    {
+      "expectation_type": "expect_table_row_count_to_be_between",
+      "kwargs": { "min_value": 6500, "max_value": 8000 },
+      "meta": { "notes": "Basic sanity: row count should remain close to expected range." }
+    },
+    {
+      "expectation_type": "expect_column_values_to_not_be_null",
+      "kwargs": { "column": "customerID" },
+      "meta": { "notes": "Primary identifier should never be null." }
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_unique",
+      "kwargs": { "column": "customerID" },
+      "meta": { "notes": "Primary identifier should be unique." }
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_in_set",
+      "kwargs": { "column": "churn", "value_set": [0, 1] },
+      "meta": { "notes": "Target must be binary 0/1." }
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_between",
+      "kwargs": { "column": "tenure", "min_value": 0, "strict_min": false },
+      "meta": { "notes": "Constraint: tenure must be >= 0." }
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_between",
+      "kwargs": { "column": "MonthlyCharges", "min_value": 0, "strict_min": true },
+      "meta": { "notes": "Constraint: MonthlyCharges must be > 0." }
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_between",
+      "kwargs": { "column": "TotalCharges", "min_value": 0, "strict_min": false, "mostly": 0.998 },
+      "meta": { "notes": "TotalCharges should be >= 0; allow a tiny fraction of nulls due to known dataset issue." }
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_between",
+      "kwargs": { "column": "charges_per_tenure", "min_value": 0, "strict_min": false, "mostly": 0.998 },
+      "meta": { "notes": "charges_per_tenure should be >= 0; allow rare nulls if TotalCharges missing." }
+    },
+    {
+      "expectation_type": "expect_column_values_to_not_match_regex",
+      "kwargs": { "column": "Contract", "regex": "^\\s*$" },
+      "meta": { "notes": "Contract should not be blank." }
+    },
+    {
+      "expectation_type": "expect_column_values_to_not_match_regex",
+      "kwargs": { "column": "PaymentMethod", "regex": "^\\s*$" },
+      "meta": { "notes": "PaymentMethod should not be blank." }
+    }
+  ],
+  "meta": {
+    "notes": "Validation suite for subscription churn feature table. Designed to fail fast before training."
+  }
+}
