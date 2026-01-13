@@ -56,48 +56,6 @@ Data Validation & Monitoring
 Visualization / BI (downstream only)
 - Tableau 
 
-## Repo Structure
-subscription-churn-prediction/
-├── data/
-│   ├── raw/                    # Original Telco churn dataset
-│   └── processed/              # Cleaned & feature-engineered data
-│
-├── notebooks/
-│   └── 01_eda.ipynb             # Exploratory data analysis
-│
-├── sql/
-│   ├── create_tables.sql        # Schema creation
-│   └── features.sql             # Feature engineering queries
-│
-├── src/
-│   ├── ingest.py                # Data ingestion
-│   ├── preprocess.py            # Feature preprocessing pipeline
-│   ├── train.py                 # Model training (LogReg, RF, XGBoost)
-│   ├── score.py                 # Inference & scoring
-│   ├── evaluate.py              # Metrics & evaluation
-│   ├── validate.py              # Data & model validation
-│   ├── monitor.py               # Drift & performance monitoring
-│   ├── monitor_summary.py
-│   ├── feature_importance.py
-│   ├── model_metrics_export.py
-│   └── export_tableau.py         # Tableau-ready export
-│
-├── outputs/
-│   ├── models/                  # Trained models & pipelines
-│   ├── metrics/                 # Evaluation metrics & reports
-│   └── predictions/             # Scored customer outputs
-│
-├── validation/
-│   └── validation_report.json   # Schema & quality checks
-│
-├── tableau/
-│   ├── extracts/                # Tableau data extracts
-│   └── screenshots/             # Dashboard screenshots
-│
-├── churn.db                     # SQLite database
-├── requirements.txt
-└── README.md
-
 ## Exploratory Data Analysis (EDA)
 Notebook: notebooks/01_eda.ipynb
 
