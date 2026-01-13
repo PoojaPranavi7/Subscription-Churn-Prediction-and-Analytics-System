@@ -57,74 +57,44 @@ Visualization / BI (downstream only)
 - Tableau 
 
 ## Repo Structure
-SUBSCRIPTION-CHURN-PREDICTION/
-│
+subscription-churn-prediction/
 ├── data/
-│   ├── raw/
-│   │   ├── telco_churn.csv
-│   │   └── .gitkeep
-│   ├── processed/
-│   │   └── .gitkeep
+│   ├── raw/                    # Original Telco churn dataset
+│   └── processed/              # Cleaned & feature-engineered data
 │
 ├── notebooks/
-│   └── 01_eda.ipynb
-│
-├── outputs/
-│   ├── metrics/
-│   │   ├── metrics.json
-│   │   ├── model_metrics.csv
-│   │   ├── confusion_matrix.csv
-│   │   ├── roc_points.csv
-│   │   ├── threshold_sweep.csv
-│   │   ├── tenure_churn.csv
-│   │   ├── contract_churn.csv
-│   │   ├── payment_churn.csv
-│   │   ├── feature_importance.csv
-│   │   ├── feature_importance.png
-│   │   ├── experiments.jsonl
-│   │   ├── monitor_baseline.json
-│   │   ├── monitor_report.json
-│   │   └── monitor_summary.csv
-│   │
-│   ├── models/
-│   │   ├── best_model.joblib
-│   │   ├── preprocess_pipeline.joblib
-│   │   └── best_model_meta.json
-│   │
-│   └── predictions/
-│       └── customer_scored.csv
-│
-├── processed/
-│   ├── X_train.npy
-│   ├── X_test.npy
-│   ├── y_train.csv
-│   ├── y_test.csv
-│   ├── feature_names.csv
-│   └── preprocess_run_metadata.json
-│
-├── validation/
-│   └── validation_report.json
+│   └── 01_eda.ipynb             # Exploratory data analysis
 │
 ├── sql/
-│   ├── create_tables.sql
-│   └── features.sql
+│   ├── create_tables.sql        # Schema creation
+│   └── features.sql             # Feature engineering queries
 │
 ├── src/
-│   ├── ingest.py
-│   ├── preprocess.py
-│   ├── train.py
-│   ├── score.py
-│   ├── evaluate.py
-│   ├── validate.py
-│   ├── monitor.py
+│   ├── ingest.py                # Data ingestion
+│   ├── preprocess.py            # Feature preprocessing pipeline
+│   ├── train.py                 # Model training (LogReg, RF, XGBoost)
+│   ├── score.py                 # Inference & scoring
+│   ├── evaluate.py              # Metrics & evaluation
+│   ├── validate.py              # Data & model validation
+│   ├── monitor.py               # Drift & performance monitoring
 │   ├── monitor_summary.py
 │   ├── feature_importance.py
 │   ├── model_metrics_export.py
-│   ├── export_tableau.py
-│   └── expectations/
-│       └── expectations.py
+│   └── export_tableau.py         # Tableau-ready export
 │
-├── churn.db
+├── outputs/
+│   ├── models/                  # Trained models & pipelines
+│   ├── metrics/                 # Evaluation metrics & reports
+│   └── predictions/             # Scored customer outputs
+│
+├── validation/
+│   └── validation_report.json   # Schema & quality checks
+│
+├── tableau/
+│   ├── extracts/                # Tableau data extracts
+│   └── screenshots/             # Dashboard screenshots
+│
+├── churn.db                     # SQLite database
 ├── requirements.txt
 └── README.md
 
