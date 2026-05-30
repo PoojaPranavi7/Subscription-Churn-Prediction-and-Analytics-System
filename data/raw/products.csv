@@ -1,0 +1,19 @@
+product_id,product_name,product_category,unit_price
+1,Dashboard Analytics,Analytics,12.0
+2,Custom Reports,Analytics,18.0
+3,Data Export,Analytics,8.0
+4,Cloud Storage 100GB,Storage,6.0
+5,Cloud Storage 1TB,Storage,15.0
+6,File Versioning,Storage,5.0
+7,Team Workspaces,Collaboration,10.0
+8,Shared Calendars,Collaboration,4.0
+9,Real-time Chat,Collaboration,7.0
+10,Single Sign-On,Security,20.0
+11,Audit Logs,Security,14.0
+12,2FA Enforcement,Security,3.0
+13,API Access,Integrations,25.0
+14,Zapier Connector,Integrations,9.0
+15,Webhooks,Integrations,6.0
+16,Priority Support,Support,30.0
+17,Onboarding Session,Support,50.0
+18,Dedicated Manager,Support,99.0
