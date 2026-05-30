@@ -1,0 +1,90 @@
+{
+  "model": "Random Forest",
+  "roc_auc": 0.9027781509444102,
+  "precision_floor": 0.6,
+  "chosen_threshold": 0.21,
+  "threshold_selection_fallback": false,
+  "default_threshold": 0.5,
+  "metrics_at_chosen_threshold": {
+    "threshold": 0.21,
+    "accuracy": 0.884,
+    "per_class": {
+      "no_churn": {
+        "precision": 0.9606299212598425,
+        "recall": 0.8948655256723717,
+        "f1": 0.9265822784810127,
+        "support": 409
+      },
+      "churn": {
+        "precision": 0.6386554621848739,
+        "recall": 0.8351648351648352,
+        "f1": 0.7238095238095238,
+        "support": 91
+      }
+    },
+    "churn_recall": 0.8351648351648352,
+    "churn_precision": 0.6386554621848739,
+    "churn_f1": 0.7238095238095238,
+    "confusion_matrix": {
+      "labels": [
+        "no_churn(0)",
+        "churn(1)"
+      ],
+      "matrix": [
+        [
+          366,
+          43
+        ],
+        [
+          15,
+          76
+        ]
+      ],
+      "tn": 366,
+      "fp": 43,
+      "fn": 15,
+      "tp": 76
+    }
+  },
+  "metrics_at_default_threshold": {
+    "threshold": 0.5,
+    "accuracy": 0.9,
+    "per_class": {
+      "no_churn": {
+        "precision": 0.9145496535796767,
+        "recall": 0.9682151589242054,
+        "f1": 0.9406175771971497,
+        "support": 409
+      },
+      "churn": {
+        "precision": 0.8059701492537313,
+        "recall": 0.5934065934065934,
+        "f1": 0.6835443037974683,
+        "support": 91
+      }
+    },
+    "churn_recall": 0.5934065934065934,
+    "churn_precision": 0.8059701492537313,
+    "churn_f1": 0.6835443037974683,
+    "confusion_matrix": {
+      "labels": [
+        "no_churn(0)",
+        "churn(1)"
+      ],
+      "matrix": [
+        [
+          396,
+          13
+        ],
+        [
+          37,
+          54
+        ]
+      ],
+      "tn": 396,
+      "fp": 13,
+      "fn": 37,
+      "tp": 54
+    }
+  }
+}
