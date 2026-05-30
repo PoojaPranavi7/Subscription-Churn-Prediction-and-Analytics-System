@@ -212,15 +212,3 @@ subscription-churn-system/
 └── README.md
 ```
 
-## Definition of Done (Section 14) — status
-
-- [x] All scripts run in order without manual edits.
-- [x] Joined modeling table exists and is reproducible (`data/processed/modeling_table.csv`).
-- [x] Three models trained and compared; **RF selected** with metrics saved
-      (`model_comparison.csv`, `model_card.json`).
-- [x] **Accuracy ≈ 85%** (0.884 at the tuned threshold) with **reasonable, strong churn
-      recall** (0.835).
-- [x] **Behavioral features dominate** the importance ranking (0.957 vs 0.043 contractual).
-- [x] Validation + monitoring reports generated.
-- [x] `customer_scored.csv` produced with risk buckets.
-- [x] README documents the story, data model, features, and run order.
