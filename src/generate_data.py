@@ -13,13 +13,22 @@ Outputs:
     - data/raw/transactions.csv   (time-series activity/purchase events)
 
 Design intent (Sections 2-4 of the context document):
-    Churned customers (~15-20% of the base) are generated so that, in the period
-    leading up to their cancellation, they show *declining engagement* (fewer
-    logins, shorter sessions), *falling purchase frequency*, and *more erratic
-    activity gaps*. Contractual fields (plan/contract) carry only a weak signal.
-    This makes the behavioral signals end up as the top churn drivers once features
-    are engineered downstream. Noise/overlap is intentionally retained so the data
-    is not perfectly separable (target ~85% accuracy, not 100%).
+    Churned customers (~15-20% of the base) tend to show, before cancelling,
+    *declining engagement* (fewer logins, shorter sessions), *falling purchase
+    frequency*, and *more erratic activity gaps*. Contractual fields (plan/contract)
+    carry only a weak signal, so behavioral features end up as the top churn drivers.
+
+    To keep the problem realistic (target ~85% accuracy, NOT a perfectly separable
+    ~100%), deliberate class overlap is built in via four behavior styles:
+      * churned + "decline" : the classic pre-cancel decay (softened to a random
+                              floor, so churners still show some late activity).
+      * churned + "sudden"  : cancels with little/no prior decline -> looks like an
+                              active customer (a source of false negatives).
+      * active  + "dip"     : a temporary slump near the cutoff that mimics churn
+                              signals even though the customer stays (false positives).
+      * active  + "stable"  : steady engagement.
+    The decline is also no longer driven to ~0, so recency/trend signals overlap
+    between classes instead of separating them cleanly.
 
 Determinism:
     All randomness is driven by a single ``numpy`` generator seeded with
@@ -96,6 +105,16 @@ BASE_CHURN_RATE = 0.15
 CONTRACT_CHURN_ADJ = {"Monthly": 0.05, "Annual": -0.06}
 PLAN_CHURN_ADJ = {"Basic": 0.03, "Standard": 0.0, "Premium": -0.03}
 
+# Behavior-style mix that controls class overlap (and therefore the achievable
+# accuracy). Tuned so a Random Forest lands near the ~85% target with strong-but-
+# imperfect recall on churn.
+#   - Of churned customers, this fraction show a pre-cancel decline; the rest churn
+#     "suddenly" and look like active customers (false negatives).
+CHURN_DECLINE_FRAC = 0.85
+#   - Of active customers, this fraction show a misleading temporary dip near the
+#     cutoff that resembles a churn signal (false positives).
+ACTIVE_DIP_FRAC = 0.12
+
 
 def _to_iso(d: date) -> str:
     return d.isoformat()
@@ -151,9 +170,12 @@ def build_subscriptions(rng: np.random.Generator) -> pd.DataFrame:
             cancel = signup + timedelta(days=cancel_offset)
             cancel_date = _to_iso(cancel)
             is_active = 0
+            style = "decline" if rng.random() < CHURN_DECLINE_FRAC else "sudden"
         else:
+            cancel = None
             cancel_date = ""  # nullable -> empty in CSV
             is_active = 1
+            style = "dip" if rng.random() < ACTIVE_DIP_FRAC else "stable"
 
         rows.append(
             {
@@ -169,6 +191,7 @@ def build_subscriptions(rng: np.random.Generator) -> pd.DataFrame:
                 # internal helpers (dropped before writing the CSV); no leading
                 # underscore so they survive DataFrame.itertuples().
                 "churn_flag": int(churned),
+                "behavior_style": style,
                 "signup_obj": signup,
                 "end_obj": cancel if churned else OBSERVATION_END,
             }
@@ -177,40 +200,50 @@ def build_subscriptions(rng: np.random.Generator) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def _health_curve(span: int, churned: bool, rng: np.random.Generator) -> np.ndarray:
+def _health_curve(span: int, style: str, rng: np.random.Generator) -> np.ndarray:
     """Per-day engagement 'health' multiplier over a customer's active span.
 
-    Active customers stay near 1.0 (stable). Churned customers decay toward ~0 over
-    a decline window just before cancellation, which drives the falling logins,
-    shorter sessions, and lower purchase frequency that the project relies on.
+    Styles (see module docstring):
+      * "decline" : decay to a random floor over a window before cancel (churn signal).
+      * "dip"     : milder, shallower slump near the cutoff (active but looks risky).
+      * "sudden"  : no decay -> churner that looks like an active customer.
+      * "stable"  : steady engagement.
+    Floors are kept well above 0 so churners still show some late activity, which
+    makes recency/trend features overlap between classes instead of separating them.
     """
     n = span + 1
     health = np.ones(n)
 
-    if churned:
-        decline_window = int(rng.integers(45, 91))
-        decline_window = min(decline_window, max(15, n - 5))
-        ramp = np.linspace(1.0, 0.06, decline_window)
-        health[n - decline_window:] = ramp
+    if style == "decline":
+        window = min(int(rng.integers(30, 91)), max(15, n - 5))
+        floor = float(rng.uniform(0.06, 0.25))
+        health[n - window:] = np.linspace(1.0, floor, window)
+    elif style == "dip":
+        window = min(int(rng.integers(25, 71)), max(12, n - 5))
+        floor = float(rng.uniform(0.45, 0.75))
+        health[n - window:] = np.linspace(1.0, floor, window)
+    # "sudden" and "stable" keep health ~1 (no engineered slump).
 
-    # Mild day-to-day wobble for everyone (kept small so active customers remain
-    # consistent and churned customers' decline still dominates).
-    health *= rng.normal(1.0, 0.05, n).clip(0.6, 1.4)
-    return health.clip(0.02, 1.5)
+    # Mild day-to-day wobble for everyone.
+    health *= rng.normal(1.0, 0.06, n).clip(0.55, 1.45)
+    return health.clip(0.02, 1.6)
 
 
-def _erratic_sigma(span: int, churned: bool) -> np.ndarray:
+def _erratic_sigma(span: int, style: str, rng: np.random.Generator) -> np.ndarray:
     """Per-day noise sigma controlling gap irregularity.
 
     Higher sigma -> more lognormal spikes/dips -> more erratic activity gaps. Ramps
-    up during the churn decline window so churned customers have a higher
-    ``activity_gap_std`` downstream.
+    up during a decline/dip window so those customers have a higher
+    ``activity_gap_std`` downstream; "sudden"/"stable" stay at the calm baseline.
     """
     n = span + 1
     sigma = np.full(n, 0.25)
-    if churned:
-        decline_window = min(75, max(15, n - 5))
-        sigma[n - decline_window:] = np.linspace(0.35, 1.0, decline_window)
+    if style == "decline":
+        window = min(75, max(15, n - 5))
+        sigma[n - window:] = np.linspace(0.35, float(rng.uniform(0.85, 1.10)), window)
+    elif style == "dip":
+        window = min(60, max(12, n - 5))
+        sigma[n - window:] = np.linspace(0.30, float(rng.uniform(0.45, 0.65)), window)
     return sigma
 
 
@@ -229,7 +262,7 @@ def build_transactions(subscriptions: pd.DataFrame, products: pd.DataFrame,
     tx_id = 0
 
     for row in subscriptions.itertuples(index=False):
-        churned = bool(row.churn_flag)
+        style = row.behavior_style
         signup: date = row.signup_obj
         end: date = row.end_obj
         span = (end - signup).days
@@ -243,8 +276,8 @@ def build_transactions(subscriptions: pd.DataFrame, products: pd.DataFrame,
         session_mean = float(rng.uniform(12.0, 45.0))
         support_base = float(rng.uniform(0.002, 0.012))
 
-        health = _health_curve(span, churned, rng)
-        sigma = _erratic_sigma(span, churned)
+        health = _health_curve(span, style, rng)
+        sigma = _erratic_sigma(span, style, rng)
         day_noise = rng.lognormal(mean=0.0, sigma=sigma)
 
         days = np.arange(span + 1)
@@ -259,8 +292,10 @@ def build_transactions(subscriptions: pd.DataFrame, products: pd.DataFrame,
         purchase_mask = rng.random(span + 1) < p_purchase
         purchase_days = days[purchase_mask]
 
-        # --- support tickets (slightly elevated for churned; rare) ---
-        support_rate = support_base * (1.6 if churned else 1.0)
+        # --- support tickets (rare; mildly elevated for declining/dipping users,
+        # so they are a weak behavioral correlate that also overlaps across classes) ---
+        support_mult = {"decline": 1.6, "dip": 1.3}.get(style, 1.0)
+        support_rate = support_base * support_mult
         support_mask = rng.random(span + 1) < support_rate
         support_days = days[support_mask]
 
@@ -347,6 +382,7 @@ def _print_summary(subscriptions: pd.DataFrame, products: pd.DataFrame,
     print(f"transactions.csv  : {len(transactions):>8,} rows")
     print("-" * 60)
     print(f"churned customers : {n_churn:,} / {n_cust:,}  ({churn_rate:.1%})")
+    print("behavior styles   :", dict(subscriptions["behavior_style"].value_counts()))
     print(f"avg events/customer: {len(transactions) / n_cust:,.1f}")
     print("-" * 60)
     print("event_type distribution:")
@@ -366,7 +402,7 @@ def main() -> None:
     transactions = build_transactions(subscriptions, products, rng)
 
     # Drop internal helper columns before persisting the seed table.
-    subs_out = subscriptions.drop(columns=["churn_flag", "signup_obj", "end_obj"])
+    subs_out = subscriptions.drop(columns=["churn_flag", "behavior_style", "signup_obj", "end_obj"])
 
     products.to_csv(RAW_DATA_DIR / "products.csv", index=False)
     subs_out.to_csv(RAW_DATA_DIR / "subscriptions.csv", index=False)
