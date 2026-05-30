@@ -1,0 +1,15 @@
+check,target,level,passed,value,threshold,message
+schema.column_presence,modeling_table,critical,True,31.0,31,all required columns present
+row_count.min,modeling_table,critical,True,2500.0,100,"2,500 rows"
+duplicate_key.customer_id,modeling_table,critical,True,0.0,0,0 duplicate customer_id(s)
+null_rate.critical,modeling_table,critical,True,0.0,0.5,no column exceeds critical null rate
+null_rate.warn,modeling_table,warning,True,0.0,0.2,no column exceeds warning null rate
+range.churn_binary,churn,critical,True,0.0,0,"0 churn values outside {0,1}"
+sanity.churn_rate,churn,warning,True,0.182,"(0.05, 0.4)",churn rate 18.2% (expected 5%-40%)
+range.non_negative,modeling_table,critical,True,0.0,0,no negative values in non-negative columns
+range.bounded_0_1.active_weeks_ratio,active_weeks_ratio,critical,True,0.0,0,"0 values outside [0,1]"
+duplicate_key.customer_base,customer_base,critical,True,0.0,0,0 duplicate customer_id(s)
+range.is_active_binary,customer_base,critical,True,0.0,0,"0 is_active values outside {0,1}"
+dates.signup_le_cutoff,customer_base,critical,True,0.0,0,0 rows with cutoff_date before signup_date
+dates.signup_le_cancel,customer_base,critical,True,0.0,0,0 rows with cancel_date before signup_date
+consistency.cancel_matches_churn,customer_base,warning,True,0.0,0,0 rows where cancel_date presence != churn==1
