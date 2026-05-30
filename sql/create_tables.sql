@@ -1,0 +1,12 @@
+-- create_tables.sql
+-- Defines the raw relational schema loaded into churn.db by src/ingest.py.
+-- Three source tables (stored unchanged): subscriptions, products, transactions.
+-- See Section 3 of the context document for the authoritative column list.
+-- SQLite dialect, kept Postgres-compatible where reasonable.
+
+-- TODO (later phase): CREATE TABLE statements for:
+--   subscriptions(customer_id PK, signup_date, plan_type, contract_type,
+--                 monthly_fee, payment_method, region, is_active, cancel_date)
+--   products(product_id PK, product_name, product_category, unit_price)
+--   transactions(transaction_id PK, customer_id FK, product_id FK, event_date,
+--                event_type, amount, session_minutes)

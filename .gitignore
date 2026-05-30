@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+.ipynb_checkpoints/
+
+# Generated data / artifacts (kept out of version control; reproducible from scripts)
+data/raw/*.csv
+data/processed/*
+churn.db
+outputs/models/*
+outputs/metrics/*
+outputs/predictions/*
+
+# Keep folder structure
+!**/.gitkeep
+
+# OS / editor
+.DS_Store
