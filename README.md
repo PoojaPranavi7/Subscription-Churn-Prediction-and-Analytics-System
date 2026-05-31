@@ -214,6 +214,7 @@ subscription-churn-system/
 └── README.md
 ```
 
+<<<<<<< HEAD
 ## Definition of Done (Section 14) — status
 
 - [x] All scripts run in order without manual edits.
@@ -226,3 +227,5 @@ subscription-churn-system/
 - [x] Validation + monitoring reports generated.
 - [x] `customer_scored.csv` produced with risk buckets.
 - [x] README documents the story, data model, features, and run order.
+=======
+>>>>>>> cd25ff9d2cfc2255c7b8e6ba916fbff1f736ee58
