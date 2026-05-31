@@ -31,8 +31,9 @@ The project must demonstrate, concretely and verifiably in code:
 These statements describe how the system is meant to work. The implementation must make
 each of them literally true so the project can be walked through end to end.
 
-1. The data is a **mix of a public-style Kaggle subscription dataset (the initial seed)
-   supplemented with synthetic data** to add realistic transactional and engagement history.
+1. The data is **a synthetic dataset modeled on real subscription churn data**,
+   generated deterministically with a seeded NumPy generator, including realistic
+   transactional and engagement history.
 2. The raw data is **relational**: separate `subscriptions`, `products`, and `transactions`
    tables that are cleaned and **joined** into a single modeling table.
 3. The strongest predictive signals are **behavioral**:
@@ -230,13 +231,13 @@ Persist metrics to disk as CSV/JSON so they are reproducible and auditable.
 ```
 subscription-churn-system/
 ├── data/
-│   ├── raw/                  # kaggle seed + generated synthetic CSVs
+│   ├── raw/                  # generated synthetic CSVs
 │   └── processed/            # joined/modeling table
 ├── sql/
 │   ├── create_tables.sql
 │   └── features.sql
 ├── src/
-│   ├── generate_data.py      # kaggle seed + synthetic supplementation
+│   ├── generate_data.py      # synthetic data generation
 │   ├── ingest.py             # load CSVs -> churn.db
 │   ├── join_clean.py         # clean + join subscriptions/products/transactions
 │   ├── features.py           # behavioral feature engineering

@@ -12,8 +12,9 @@ to act.
 ## The story
 
 1. Raw data is **relational** — separate `subscriptions`, `products`, and
-   `transactions` tables (a public-style subscription seed supplemented with
-   synthetic transactional/engagement history).
+   `transactions` tables (a synthetic dataset modeled on real subscription churn
+   data, generated deterministically with a seeded NumPy generator, including
+   transactional/engagement history).
 2. The tables are cleaned and **joined**, and a churn label is defined from a
    **labeling cutoff** so features use only pre-cutoff data (no leakage).
 3. Customer-level **behavioral features** are engineered: engagement, purchase
@@ -84,9 +85,9 @@ Boosting since it has no `class_weight`.
 
 | Model | Accuracy | Precision | Recall | F1 | ROC-AUC |
 | --- | --- | --- | --- | --- | --- |
-| Logistic Regression | 0.890 | 0.657 | 0.835 | 0.735 | 0.940 |
-| **Random Forest (selected)** | **0.923** | **0.895** | 0.659 | 0.757 | 0.940 |
-| Gradient Boosting | 0.911 | 0.733 | 0.802 | 0.765 | 0.940 |
+| Logistic Regression | 0.881 | 0.629 | 0.849 | 0.722 | 0.929 |
+| **Random Forest (selected)** | **0.932** | **0.914** | 0.692 | 0.787 | 0.933 |
+| Gradient Boosting | 0.926 | 0.787 | 0.813 | 0.798 | 0.931 |
 
 Selection is computed in code: rank by mean CV ROC-AUC; when models tie within a
 tolerance, prefer Random Forest for the best performance/interpretability balance (its
@@ -95,28 +96,29 @@ feature importances drive the churn-driver analysis). Artifacts: `final_model.jo
 
 ## Evaluation & threshold tuning (`src/evaluate.py`)
 
-Held-out test set, **ROC-AUC = 0.903**. The threshold is swept and the operating point
+Held-out test set, **ROC-AUC = 0.924**. The threshold is swept and the operating point
 maximizes churn recall subject to a precision floor of 0.60 (the business tradeoff:
-missing an at-risk customer costs more than over-flagging). **Chosen threshold = 0.21.**
+missing an at-risk customer costs more than over-flagging). **Chosen threshold = 0.19.**
 
-| | Default (0.50) | **Chosen (0.21)** |
+| | Default (0.50) | **Chosen (0.19)** |
 | --- | --- | --- |
-| Accuracy | 0.900 | **0.884** (~85% target) |
-| Churn recall | 0.593 | **0.835** |
-| Churn precision | 0.806 | 0.639 |
-| Churn F1 | 0.684 | 0.724 |
+| Accuracy | 0.920 | **0.872** (~85% target) |
+| Churn recall | 0.615 | **0.835** |
+| Churn precision | 0.918 | 0.608 |
+| Churn F1 | 0.737 | 0.704 |
 
-Confusion matrix at 0.21: `tn=366, fp=43, fn=15, tp=76`. Outputs: `evaluation.json`,
+Confusion matrix at 0.19: `tn=360, fp=49, fn=15, tp=76`. Outputs: `evaluation.json`,
 `threshold_sweep.csv`, `confusion_matrix.csv`, and the persisted `threshold.json`.
 
 ## Churn drivers (`src/feature_importance.py`)
 
 RF impurity importances (aggregated from one-hot columns back to the 29 source
 features) plus permutation importance. **Behavioral signals dominate**: behavioral
-families hold **0.957** of total importance vs **0.043** for contractual fields, and no
+families hold **0.958** of total importance vs **0.042** for contractual fields, and no
 contractual feature appears in the top 5. Top drivers: `session_minutes_trend`,
-`coefficient_of_variation_sessions`, `logins_last_30d`, `engagement_trend`,
-`days_since_last_activity`. Outputs: `feature_importance.csv`,
+`purchases_last_30d` (#2), `coefficient_of_variation_sessions`, `logins_last_30d`,
+`engagement_trend` — falling purchase frequency now ranks as a top behavioral driver
+alongside engagement decline. Outputs: `feature_importance.csv`,
 `feature_importance.png`, `churn_drivers_insights.md`. The script **flags loudly** if
 behavioral features ever fail to rank at the top.
 
@@ -162,7 +164,7 @@ the project root so the `src` package imports resolve.
 
 | Step | Command | Role |
 | ---- | ------- | ---- |
-| 1 | `python -m src.generate_data` | Seed + synthetic data → `data/raw/*.csv` |
+| 1 | `python -m src.generate_data` | Generate synthetic data → `data/raw/*.csv` |
 | 2 | `python -m src.ingest` | Load raw CSVs into `churn.db` (DDL from `sql/create_tables.sql`) |
 | 3 | `python -m src.join_clean` | Clean + join; churn label from the labeling cutoff → `data/processed/` |
 | 4 | `python -m src.features` | Behavioral feature engineering → `modeling_table.csv` |
@@ -183,14 +185,14 @@ the project root so the `src` package imports resolve.
 ```
 subscription-churn-system/
 ├── data/
-│   ├── raw/                  # seed + generated synthetic CSVs
+│   ├── raw/                  # generated synthetic CSVs
 │   └── processed/            # cleaned/joined layer + modeling_table.csv
 ├── sql/
 │   ├── create_tables.sql
 │   └── features.sql
 ├── src/
 │   ├── config.py             # shared constants (RANDOM_STATE, paths)
-│   ├── generate_data.py      # seed + synthetic supplementation
+│   ├── generate_data.py      # synthetic data generation
 │   ├── ingest.py             # load CSVs -> churn.db
 │   ├── join_clean.py         # clean + join; churn label + cutoff
 │   ├── features.py           # behavioral feature engineering
@@ -218,9 +220,9 @@ subscription-churn-system/
 - [x] Joined modeling table exists and is reproducible (`data/processed/modeling_table.csv`).
 - [x] Three models trained and compared; **RF selected** with metrics saved
       (`model_comparison.csv`, `model_card.json`).
-- [x] **Accuracy ≈ 85%** (0.884 at the tuned threshold) with **reasonable, strong churn
+- [x] **Accuracy ≈ 0.872** at the tuned threshold with **reasonable, strong churn
       recall** (0.835).
-- [x] **Behavioral features dominate** the importance ranking (0.957 vs 0.043 contractual).
+- [x] **Behavioral features dominate** the importance ranking (0.958 vs 0.042 contractual).
 - [x] Validation + monitoring reports generated.
 - [x] `customer_scored.csv` produced with risk buckets.
 - [x] README documents the story, data model, features, and run order.

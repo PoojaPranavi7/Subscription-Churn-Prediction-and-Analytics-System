@@ -1,10 +1,10 @@
-"""Generate the raw dataset: Kaggle-style seed + synthetic supplementation.
+"""Generate the raw dataset: a synthetic dataset modeled on real subscription churn data.
 
 Role in the pipeline (step 1):
     Produces the raw relational CSVs under ``data/raw/`` that everything else is
-    built on. Starts from a public-style Kaggle subscription seed (customer-level
-    subscription records) and supplements it with synthetic transactional and
-    engagement history so each customer has a realistic time series of logins,
+    built on. The data is fully synthetic, generated deterministically with a seeded
+    NumPy generator: customer-level subscription records plus synthetic transactional
+    and engagement history so each customer has a realistic time series of logins,
     purchases, feature-use, and support-ticket events.
 
 Outputs:
@@ -114,6 +114,17 @@ CHURN_DECLINE_FRAC = 0.85
 #   - Of active customers, this fraction show a misleading temporary dip near the
 #     cutoff that resembles a churn signal (false positives).
 ACTIVE_DIP_FRAC = 0.12
+
+# Purchase-frequency decline for "decline" churners. Their purchases follow a
+# dedicated curve (independent of the engagement health curve): a normal rate until
+# a ~60-day window before cancel, then a softened ramp down to a random floor. This
+# makes falling purchase frequency a genuine, strong-but-imperfect churn signal
+# (purchase_frequency_trend, purchases_last_30d vs prev_30d) without altering the
+# sudden/dip/stable styles. The floor stays well above zero (realistic, not
+# perfectly separating) and is kept shallower than the engagement floor so the
+# headline #1 driver remains an engagement signal.
+PURCHASE_DECLINE_WINDOW = (55, 71)   # ~60-day pre-cancel drop (randint range)
+PURCHASE_DECLINE_FLOOR = (0.05, 0.18)
 
 
 def _to_iso(d: date) -> str:
@@ -247,6 +258,39 @@ def _erratic_sigma(span: int, style: str, rng: np.random.Generator) -> np.ndarra
     return sigma
 
 
+def _purchase_intensity(span: int, style: str, health: np.ndarray,
+                        rng: np.random.Generator) -> np.ndarray:
+    """Per-day purchase-intensity multiplier.
+
+    For "decline" churners, purchases follow a dedicated curve: a normal rate until a
+    ~60-day window before cancel, then a softened linear ramp down to a random floor.
+    This gives them a clear fall in purchase frequency versus their own earlier
+    history (so purchase_frequency_trend and purchases_last_30d vs prev_30d separate
+    churners from non-churners) while keeping their pre-decline history normal.
+
+    All other styles ("sudden", "dip", "stable") keep using the engagement health
+    curve exactly as before, preserving the existing class overlap and accuracy.
+    """
+    if style != "decline":
+        return health
+    n = span + 1
+    curve = np.ones(n)
+    window = min(int(rng.integers(*PURCHASE_DECLINE_WINDOW)), max(20, n - 5))
+    floor = float(rng.uniform(*PURCHASE_DECLINE_FLOOR))
+
+    # The fall is concentrated in the early part of the ~60-day window (roughly the
+    # 60->30-day-before-cancel stretch) and then held at the floor for the final
+    # ~30 days. This drives purchases_last_30d down near the floor (a clean recent
+    # purchase-frequency signal) while purchases_prev_30d stays higher -- yielding a
+    # strong, consistently negative purchase_frequency_trend without forcing it to
+    # zero.
+    flat_tail = min(30, window - 5)
+    ramp_len = window - flat_tail
+    curve[n - window:n - flat_tail] = np.linspace(1.0, floor, ramp_len)
+    curve[n - flat_tail:] = floor
+    return curve
+
+
 def build_transactions(subscriptions: pd.DataFrame, products: pd.DataFrame,
                        rng: np.random.Generator) -> pd.DataFrame:
     """Generate the synthetic event time series for every customer.
@@ -271,7 +315,11 @@ def build_transactions(subscriptions: pd.DataFrame, products: pd.DataFrame,
 
         # Per-customer baseline propensities (heterogeneous across the base).
         base_login = float(rng.uniform(0.25, 0.7))       # P(login) per day at full health
-        base_purchase = float(rng.uniform(0.02, 0.08))   # P(purchase) per day at full health
+        # Higher than the original 0.02-0.08 so per-30-day purchase counts are less
+        # Poisson-noisy, which lets the purchase-frequency *trend* read as a clean
+        # signal for decline churners (counts stay realistic for a subscription with
+        # add-on purchases).
+        base_purchase = float(rng.uniform(0.05, 0.14))   # P(purchase) per day at full health
         base_feature_lambda = float(rng.uniform(0.5, 2.0))
         session_mean = float(rng.uniform(12.0, 45.0))
         support_base = float(rng.uniform(0.002, 0.012))
@@ -287,8 +335,11 @@ def build_transactions(subscriptions: pd.DataFrame, products: pd.DataFrame,
         login_mask = rng.random(span + 1) < p_login
         login_days = days[login_mask]
 
-        # --- purchases (correlated with engagement, independent draw) ---
-        p_purchase = np.clip(base_purchase * health * day_noise, 0.0, 0.6)
+        # --- purchases ---
+        # Decline churners use a dedicated purchase-decline curve (clear ~60-day drop
+        # in purchase frequency); all other styles keep tracking engagement health.
+        purchase_curve = _purchase_intensity(span, style, health, rng)
+        p_purchase = np.clip(base_purchase * purchase_curve * day_noise, 0.0, 0.6)
         purchase_mask = rng.random(span + 1) < p_purchase
         purchase_days = days[purchase_mask]
 

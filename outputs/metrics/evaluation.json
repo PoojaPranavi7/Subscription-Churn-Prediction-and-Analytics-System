@@ -1,30 +1,30 @@
 {
   "model": "Random Forest",
-  "roc_auc": 0.9027781509444102,
+  "roc_auc": 0.9238426610064752,
   "precision_floor": 0.6,
-  "chosen_threshold": 0.21,
+  "chosen_threshold": 0.19,
   "threshold_selection_fallback": false,
   "default_threshold": 0.5,
   "metrics_at_chosen_threshold": {
-    "threshold": 0.21,
-    "accuracy": 0.884,
+    "threshold": 0.19,
+    "accuracy": 0.872,
     "per_class": {
       "no_churn": {
-        "precision": 0.9606299212598425,
-        "recall": 0.8948655256723717,
-        "f1": 0.9265822784810127,
+        "precision": 0.96,
+        "recall": 0.8801955990220048,
+        "f1": 0.9183673469387755,
         "support": 409
       },
       "churn": {
-        "precision": 0.6386554621848739,
+        "precision": 0.608,
         "recall": 0.8351648351648352,
-        "f1": 0.7238095238095238,
+        "f1": 0.7037037037037037,
         "support": 91
       }
     },
     "churn_recall": 0.8351648351648352,
-    "churn_precision": 0.6386554621848739,
-    "churn_f1": 0.7238095238095238,
+    "churn_precision": 0.608,
+    "churn_f1": 0.7037037037037037,
     "confusion_matrix": {
       "labels": [
         "no_churn(0)",
@@ -32,40 +32,40 @@
       ],
       "matrix": [
         [
-          366,
-          43
+          360,
+          49
         ],
         [
           15,
           76
         ]
       ],
-      "tn": 366,
-      "fp": 43,
+      "tn": 360,
+      "fp": 49,
       "fn": 15,
       "tp": 76
     }
   },
   "metrics_at_default_threshold": {
     "threshold": 0.5,
-    "accuracy": 0.9,
+    "accuracy": 0.92,
     "per_class": {
       "no_churn": {
-        "precision": 0.9145496535796767,
-        "recall": 0.9682151589242054,
-        "f1": 0.9406175771971497,
+        "precision": 0.9202733485193622,
+        "recall": 0.9877750611246944,
+        "f1": 0.9528301886792453,
         "support": 409
       },
       "churn": {
-        "precision": 0.8059701492537313,
-        "recall": 0.5934065934065934,
-        "f1": 0.6835443037974683,
+        "precision": 0.9180327868852459,
+        "recall": 0.6153846153846154,
+        "f1": 0.7368421052631579,
         "support": 91
       }
     },
-    "churn_recall": 0.5934065934065934,
-    "churn_precision": 0.8059701492537313,
-    "churn_f1": 0.6835443037974683,
+    "churn_recall": 0.6153846153846154,
+    "churn_precision": 0.9180327868852459,
+    "churn_f1": 0.7368421052631579,
     "confusion_matrix": {
       "labels": [
         "no_churn(0)",
@@ -73,18 +73,18 @@
       ],
       "matrix": [
         [
-          396,
-          13
+          404,
+          5
         ],
         [
-          37,
-          54
+          35,
+          56
         ]
       ],
-      "tn": 396,
-      "fp": 13,
-      "fn": 37,
-      "tp": 54
+      "tn": 404,
+      "fp": 5,
+      "fn": 35,
+      "tp": 56
     }
   }
 }

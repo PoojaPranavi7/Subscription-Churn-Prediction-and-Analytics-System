@@ -1,2 +1,2 @@
 run_at,run_type,status,baseline_created_at,n_metrics,n_drift_moderate,n_drift_significant,baseline_rows,current_rows,churn_rate_baseline,churn_rate_current,prediction_rate_baseline,prediction_rate_current
-2026-05-30T05:47:29+00:00,baseline_established,BASELINE,2026-05-30T05:47:29+00:00,27,0,0,2500,2500,0.182,0.182,0.1996,0.1996
+2026-05-31T16:37:40+00:00,baseline_established,BASELINE,2026-05-31T16:37:40+00:00,27,0,0,2500,2500,0.182,0.182,0.204,0.204
