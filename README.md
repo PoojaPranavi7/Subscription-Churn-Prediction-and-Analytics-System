@@ -102,7 +102,7 @@ missing an at-risk customer costs more than over-flagging). **Chosen threshold =
 
 | | Default (0.50) | **Chosen (0.19)** |
 | --- | --- | --- |
-| Accuracy | 0.920 | **0.872** (~85% target) |
+| Accuracy | 0.920 | **0.872** |
 | Churn recall | 0.615 | **0.835** |
 | Churn precision | 0.918 | 0.608 |
 | Churn F1 | 0.737 | 0.704 |
@@ -212,20 +212,4 @@ subscription-churn-system/
 ├── churn.db
 ├── requirements.txt
 └── README.md
-```
-
-<<<<<<< HEAD
-## Definition of Done (Section 14) — status
-
-- [x] All scripts run in order without manual edits.
-- [x] Joined modeling table exists and is reproducible (`data/processed/modeling_table.csv`).
-- [x] Three models trained and compared; **RF selected** with metrics saved
-      (`model_comparison.csv`, `model_card.json`).
-- [x] **Accuracy ≈ 0.872** at the tuned threshold with **reasonable, strong churn
-      recall** (0.835).
-- [x] **Behavioral features dominate** the importance ranking (0.958 vs 0.042 contractual).
-- [x] Validation + monitoring reports generated.
-- [x] `customer_scored.csv` produced with risk buckets.
-- [x] README documents the story, data model, features, and run order.
-=======
->>>>>>> cd25ff9d2cfc2255c7b8e6ba916fbff1f736ee58
+``
