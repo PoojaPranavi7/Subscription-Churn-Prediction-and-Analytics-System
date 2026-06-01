@@ -19,3 +19,4 @@ outputs/predictions/*
 
 # OS / editor
 .DS_Store
+subscription_context_document.md

@@ -1,33 +1,45 @@
 # Subscription Churn Prediction & Analytics System
 
 An end-to-end subscription churn prediction and analytics system in **Python + SQL**.
-It turns raw subscription, product, and transaction data into **behavioral signals**
-that predict which customers are at risk of churning — early enough for the business
-to act.
+It cleans and joins relational subscription, product, and transaction data, engineers
+customer-level **behavioral signals**, compares three models and selects Random Forest,
+handles class imbalance and tunes the decision threshold, and surfaces the behavioral
+drivers of churn — early enough for the business to act — with validation, monitoring,
+and a scored, risk-bucketed customer file as the final output.
 
-> The full project specification lives in
-> [`subscription_context_document.md`](subscription_context_document.md), the single
-> source of truth for the data model, features, and modeling choices.
+## Project goal
+
+Turn raw subscription, product, and transaction data into behavioral signals that
+predict which customers are at risk of churning. The project demonstrates, concretely
+and verifiably in code:
+
+- Cleaning and **joining subscription + product + transaction data** from a relational source.
+- **Reusable preprocessing workflows** (one fitted pipeline, not one-off scripts).
+- **Engineered behavioral features** centered on engagement, purchase patterns, and retention.
+- Evaluation of **multiple models** with a performance comparison.
+- **Feature importance analysis** to surface the key churn drivers.
+- Handling of **class imbalance** with metrics beyond accuracy (precision, recall, F1, ROC-AUC).
+- **Validation checks and lightweight monitoring** to mimic a production ML workflow.
+- A final model reaching **~85% accuracy** at the tuned threshold with strong churn recall.
 
 ## The story
 
-1. Raw data is **relational** — separate `subscriptions`, `products`, and
-   `transactions` tables (a synthetic dataset modeled on real subscription churn
-   data, generated deterministically with a seeded NumPy generator, including
-   transactional/engagement history).
-2. The tables are cleaned and **joined**, and a churn label is defined from a
-   **labeling cutoff** so features use only pre-cutoff data (no leakage).
-3. Customer-level **behavioral features** are engineered: engagement, purchase
-   patterns, usage consistency, and retention/recency.
-4. Three models are compared on the same split — **Logistic Regression, Random
-   Forest, Gradient Boosting** — and **Random Forest is selected** for the best
-   balance of performance and interpretability.
-5. Churn is **imbalanced (~18%)**, so accuracy alone is not trusted; **recall on the
-   churn class is prioritized** and the **decision threshold is tuned** to a business
-   tradeoff.
-6. Random Forest **feature importances** confirm the headline insight: **behavioral
-   signals (engagement decline, falling purchase frequency, usage inconsistency,
-   recency) are the strongest churn drivers**, not contractual fields.
+1. The data is **a synthetic dataset modeled on real subscription churn data**, generated
+   deterministically with a seeded NumPy generator. It is **relational** — separate
+   `subscriptions`, `products`, and `transactions` tables with realistic
+   transactional/engagement history.
+2. The tables are cleaned and **joined**, and a churn label is defined from a **labeling
+   cutoff** so features use only pre-cutoff data (no leakage).
+3. Customer-level **behavioral features** are engineered: engagement, purchase patterns,
+   usage consistency, and retention/recency.
+4. Three models are compared on the same split — **Logistic Regression, Random Forest,
+   Gradient Boosting** — and **Random Forest is selected** (by mean CV ROC-AUC) for the
+   best balance of performance and interpretability.
+5. Churn is **imbalanced (~18%)**, so accuracy alone is not trusted; **recall on the churn
+   class is prioritized** and the **decision threshold is tuned** to a business tradeoff.
+6. Random Forest **feature importances** confirm the headline insight: **behavioral signals
+   (engagement decline, falling purchase frequency, usage inconsistency, recency) are the
+   strongest churn drivers**, not contractual fields.
 
 ## Data model
 
@@ -64,8 +76,9 @@ last 30 days vs the prior 30 days, so a negative trend means decline.
 
 ## Preprocessing & imputation (`src/preprocess.py`)
 
-A single reusable scikit-learn `ColumnTransformer`, **fit on the training split only**
-and reused for evaluation/scoring (saved with joblib). Imputation strategy:
+Imputation lives **inside one reusable scikit-learn `ColumnTransformer`**, **fit on the
+training split only** and reused for evaluation/scoring (saved with joblib) — no ad-hoc,
+per-script imputation and no leakage. Strategy:
 
 | Column group | Imputation | Encoding/scaling |
 | --- | --- | --- |
@@ -96,9 +109,12 @@ feature importances drive the churn-driver analysis). Artifacts: `final_model.jo
 
 ## Evaluation & threshold tuning (`src/evaluate.py`)
 
-Held-out test set, **ROC-AUC = 0.924**. The threshold is swept and the operating point
-maximizes churn recall subject to a precision floor of 0.60 (the business tradeoff:
-missing an at-risk customer costs more than over-flagging). **Chosen threshold = 0.19.**
+**Accuracy alone is not trusted** on an imbalanced problem, so the full suite is reported
+and persisted: per-class precision/recall/F1, ROC-AUC, the confusion matrix, and a
+threshold sweep. Held-out test set, **ROC-AUC = 0.924**. The threshold is swept and the
+operating point maximizes churn recall subject to a precision floor of 0.60 (the business
+tradeoff: missing an at-risk customer costs more than over-flagging). **Chosen threshold
+= 0.19.**
 
 | | Default (0.50) | **Chosen (0.19)** |
 | --- | --- | --- |
@@ -212,4 +228,4 @@ subscription-churn-system/
 ├── churn.db
 ├── requirements.txt
 └── README.md
-``
+```
